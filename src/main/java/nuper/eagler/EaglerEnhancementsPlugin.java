@@ -14,6 +14,9 @@ import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
@@ -59,6 +62,7 @@ public final class EaglerEnhancementsPlugin extends JavaPlugin implements Listen
     private final Set<UUID> unauthenticated = Collections.synchronizedSet(new HashSet<>());
     private final Set<UUID> sanctuaryInside = Collections.synchronizedSet(new HashSet<>());
     private final Map<UUID, AccountData> accounts = new HashMap<>();
+    private final Map<UUID, BossBar> hudBars = new HashMap<>();
     private final List<Sanctuary> sanctuaries = new ArrayList<>();
     private final SecureRandom random = new SecureRandom();
     private File accountDirectory;
@@ -101,6 +105,8 @@ public final class EaglerEnhancementsPlugin extends JavaPlugin implements Listen
             unauthenticated.remove(player.getUniqueId());
             player.sendActionBar("");
         }
+        hudBars.values().forEach(BossBar::removeAll);
+        hudBars.clear();
     }
 
     private void registerCommands() {
@@ -325,6 +331,8 @@ public final class EaglerEnhancementsPlugin extends JavaPlugin implements Listen
         }
         unauthenticated.remove(player.getUniqueId());
         sanctuaryInside.remove(player.getUniqueId());
+        BossBar hudBar = hudBars.remove(player.getUniqueId());
+        if (hudBar != null) hudBar.removeAll();
     }
 
     private boolean authCommand(org.bukkit.command.CommandSender sender, org.bukkit.command.Command command,
@@ -643,7 +651,11 @@ public final class EaglerEnhancementsPlugin extends JavaPlugin implements Listen
 
     private void periodicTick() {
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (isAuthenticated(player) && inAnySanctuary(player.getLocation())) {
+            if (!isAuthenticated(player)) {
+                hideHud(player);
+                continue;
+            }
+            if (inAnySanctuary(player.getLocation())) {
                 player.setHealth(Math.min(player.getMaxHealth(), player.getMaxHealth()));
                 player.setFoodLevel(20);
                 player.setSaturation(20.0f);
@@ -655,8 +667,8 @@ public final class EaglerEnhancementsPlugin extends JavaPlugin implements Listen
                 if (sanctuaryInside.remove(player.getUniqueId())) {
                     player.sendActionBar("");
                 }
-                if (isAuthenticated(player)) sendHud(player);
             }
+            sendHud(player);
         }
     }
 
@@ -669,7 +681,18 @@ public final class EaglerEnhancementsPlugin extends JavaPlugin implements Listen
         String text = String.format(Locale.ROOT, "Time: %02d:%02d  |  Biome: %s  |  XYZ: %d, %d, %d",
             hours, minutes, toTitleCase(biome),
             location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        player.sendActionBar(ChatColor.AQUA + text);
+        BossBar hudBar = hudBars.computeIfAbsent(player.getUniqueId(), uuid -> {
+            BossBar bar = Bukkit.createBossBar("", BarColor.WHITE, BarStyle.SOLID);
+            bar.setProgress(0.0);
+            bar.addPlayer(player);
+            return bar;
+        });
+        hudBar.setTitle(ChatColor.AQUA + text);
+    }
+
+    private void hideHud(Player player) {
+        BossBar hudBar = hudBars.remove(player.getUniqueId());
+        if (hudBar != null) hudBar.removeAll();
     }
 
     private String toTitleCase(String value) {

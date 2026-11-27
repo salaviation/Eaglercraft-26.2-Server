@@ -131,12 +131,10 @@ maximum health on death.
 
 ### HUD and F3 limitation
 
-The server sends `Time:`, `Biome:` and `XYZ:` to the Eagler player through an action bar. The current
-bundled client is a 73 MB generated HTML/WebAssembly client and contains no inspectable
-JavaScript source hook for F3 state. Therefore, this project can provide the HUD and normal
-F3 key behaviour, but it cannot reliably hide only the action-bar HUD when F3 is pressed
-or position it beside the FPS counter without an available client source hook. This is the
-remaining client-integration limitation, not a server plugin omission.
+The server displays `Time:`, `Biome:` and `XYZ:` in a boss bar at the top of the screen. The
+current bundled client is a 73 MB generated HTML/WebAssembly client and contains no inspectable
+JavaScript source hook for F3 state. Therefore, the HUD cannot be reliably hidden when F3 is
+pressed or positioned beside the FPS counter without an available client source hook.
 
 The same bundled-client limitation prevents adding an Elytra-only slot to the inventory screen
 or rendering both chestplate armor and Elytra on a player at once. Those changes require editable
