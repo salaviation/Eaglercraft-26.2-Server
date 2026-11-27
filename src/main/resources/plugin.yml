@@ -2,7 +2,7 @@ name: EaglerEnhancements
 main: nuper.eagler.EaglerEnhancementsPlugin
 version: 1.0.0
 api-version: '1.21'
-description: Eaglercraft HUD, authentication, login protection and sanctuaries
+description: Eaglercraft HUD, custom items, authentication and sanctuaries
 libraries:
   - org.bouncycastle:bcprov-jdk18on:1.78.1
 commands:

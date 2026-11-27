@@ -11,6 +11,8 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -18,14 +20,25 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.*;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.RecipeChoice;
+import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -50,6 +63,8 @@ public final class EaglerEnhancementsPlugin extends JavaPlugin implements Listen
     private final SecureRandom random = new SecureRandom();
     private File accountDirectory;
     private File accountDataFile;
+    private NamespacedKey customItemKey;
+    private NamespacedKey extraHeartsKey;
     private boolean authEnabled = true;
     private boolean spawnSanctuaryEnabled = true;
     private int defaultSanctuaryRadius = 11;
@@ -61,8 +76,11 @@ public final class EaglerEnhancementsPlugin extends JavaPlugin implements Listen
         accountDirectory = new File(getDataFolder(), "accounts");
         accountDirectory.mkdirs();
         accountDataFile = new File(getDataFolder(), "state.json");
+        customItemKey = new NamespacedKey(this, "custom_item");
+        extraHeartsKey = new NamespacedKey(this, "extra_hearts");
         loadState();
         ensureLoginPlatform();
+        registerCustomRecipes();
 
         Bukkit.getPluginManager().registerEvents(this, this);
         registerCommands();
@@ -77,6 +95,8 @@ public final class EaglerEnhancementsPlugin extends JavaPlugin implements Listen
     public void onDisable() {
         if (periodTask != null) periodTask.cancel();
         saveState();
+        Bukkit.removeRecipe(new NamespacedKey(this, "shard_of_life"));
+        Bukkit.removeRecipe(new NamespacedKey(this, "heart_of_undying"));
         for (Player player : Bukkit.getOnlinePlayers()) {
             unauthenticated.remove(player.getUniqueId());
             player.sendActionBar("");
@@ -91,6 +111,70 @@ public final class EaglerEnhancementsPlugin extends JavaPlugin implements Listen
         Objects.requireNonNull(getCommand("spawnprotect")).setExecutor(this::spawnProtectCommand);
         Objects.requireNonNull(getCommand("sanctuary")).setExecutor(this::sanctuaryCommand);
         Objects.requireNonNull(getCommand("removesanctuary")).setExecutor(this::removeSanctuaryCommand);
+    }
+
+    private void registerCustomRecipes() {
+        NamespacedKey shardKey = new NamespacedKey(this, "shard_of_life");
+        NamespacedKey heartKey = new NamespacedKey(this, "heart_of_undying");
+        Bukkit.removeRecipe(shardKey);
+        Bukkit.removeRecipe(heartKey);
+
+        ShapedRecipe shardRecipe = new ShapedRecipe(shardKey,
+            createCustomItem("shard_of_life", "Shard of Life", ChatColor.AQUA));
+        shardRecipe.shape("TTT", "TTT", "TTT");
+        shardRecipe.setIngredient('T', Material.TOTEM_OF_UNDYING);
+        Bukkit.addRecipe(shardRecipe);
+
+        ShapedRecipe heartRecipe = new ShapedRecipe(heartKey,
+            createCustomItem("heart_of_undying", "Heart of Undying", ChatColor.LIGHT_PURPLE));
+        heartRecipe.shape("SSS", "SSS", "SSS");
+        heartRecipe.setIngredient('S', new RecipeChoice.ExactChoice(
+            createCustomItem("shard_of_life", "Shard of Life", ChatColor.AQUA)));
+        Bukkit.addRecipe(heartRecipe);
+    }
+
+    private ItemStack createCustomItem(String id, String name, ChatColor color) {
+        ItemStack item = new ItemStack(Material.TOTEM_OF_UNDYING);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(color + name);
+        meta.getPersistentDataContainer().set(customItemKey, PersistentDataType.STRING, id);
+        if ("heart_of_undying".equals(id)) {
+            meta.addEnchant(Enchantment.UNBREAKING, 1, true);
+            meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        }
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private boolean isCustomItem(ItemStack item, String id) {
+        if (item == null || item.getType() != Material.TOTEM_OF_UNDYING || !item.hasItemMeta()) return false;
+        return id.equals(item.getItemMeta().getPersistentDataContainer()
+            .get(customItemKey, PersistentDataType.STRING));
+    }
+
+    private int extraHearts(Player player) {
+        return player.getPersistentDataContainer().getOrDefault(extraHeartsKey, PersistentDataType.INTEGER, 0);
+    }
+
+    private void applyExtraHearts(Player player) {
+        int extraHearts = extraHearts(player);
+        if (extraHearts == 0) return;
+        AttributeInstance maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
+        if (maxHealth == null) {
+            getLogger().severe("Could not restore extra hearts for " + player.getName() + ": max-health attribute is missing.");
+            return;
+        }
+        maxHealth.setBaseValue(20.0 + extraHearts * 2.0);
+    }
+
+    private void resetExtraHearts(Player player) {
+        player.getPersistentDataContainer().remove(extraHeartsKey);
+        AttributeInstance maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
+        if (maxHealth == null) {
+            getLogger().severe("Could not reset extra hearts for " + player.getName() + ": max-health attribute is missing.");
+            return;
+        }
+        maxHealth.setBaseValue(20.0);
     }
 
     private void loadState() {
@@ -207,6 +291,9 @@ public final class EaglerEnhancementsPlugin extends JavaPlugin implements Listen
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        Bukkit.getScheduler().runTask(this, () -> {
+            if (player.isOnline()) applyExtraHearts(player);
+        });
         unauthenticated.remove(player.getUniqueId());
         if (!authEnabled) return;
 
@@ -637,8 +724,49 @@ public final class EaglerEnhancementsPlugin extends JavaPlugin implements Listen
 
     @EventHandler(ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent event) {
-        if (!isAuthenticated(event.getPlayer()) || (event.getClickedBlock() != null &&
-            isLoginPlatform(event.getClickedBlock().getLocation()))) event.setCancelled(true);
+        Player player = event.getPlayer();
+        if (!isAuthenticated(player) || (event.getClickedBlock() != null &&
+            isLoginPlatform(event.getClickedBlock().getLocation()))) {
+            event.setCancelled(true);
+            return;
+        }
+        if (event.getHand() != EquipmentSlot.HAND || !isCustomItem(event.getItem(), "heart_of_undying") ||
+            (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK)) return;
+
+        AttributeInstance maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
+        if (maxHealth == null) {
+            getLogger().severe("Could not grant an extra heart to " + player.getName() + ": max-health attribute is missing.");
+            return;
+        }
+
+        event.setCancelled(true);
+        int hearts = extraHearts(player) + 1;
+        player.getPersistentDataContainer().set(extraHeartsKey, PersistentDataType.INTEGER, hearts);
+        maxHealth.setBaseValue(20.0 + hearts * 2.0);
+        player.setHealth(Math.min(maxHealth.getValue(), player.getHealth() + 2.0));
+
+        ItemStack item = event.getItem();
+        if (item.getAmount() == 1) {
+            player.getInventory().setItemInMainHand(null);
+        } else {
+            item.setAmount(item.getAmount() - 1);
+        }
+        player.sendMessage(ChatColor.LIGHT_PURPLE + "You gained an extra heart. It will be lost when you die.");
+    }
+
+    @EventHandler
+    public void onDeath(PlayerDeathEvent event) {
+        resetExtraHearts(event.getEntity());
+    }
+
+    @EventHandler
+    public void onRespawn(PlayerRespawnEvent event) {
+        Player player = event.getPlayer();
+        Bukkit.getScheduler().runTask(this, () -> {
+            if (!player.isOnline()) return;
+            resetExtraHearts(player);
+            player.setHealth(20.0);
+        });
     }
 
     @EventHandler(ignoreCancelled = true)

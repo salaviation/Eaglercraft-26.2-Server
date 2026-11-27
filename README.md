@@ -120,6 +120,15 @@ The plugin uses server-side Paper events for PVP, mob spawning/movement, explosi
 block modification, inventory and interaction restrictions. The default sanctuary is a
 hemisphere with radius 11 centred on the overworld spawn and extending upward.
 
+### Custom totems
+
+Fill a 3x3 crafting grid with nine Totems of Undying to craft an aqua-named **Shard of Life**.
+Fill a 3x3 grid with nine Shards of Life to craft the enchanted, light-purple **Heart of
+Undying**. Both items are Totems of Undying and retain their normal totem behavior. Right-click
+with a Heart of Undying to consume it, gain one extra heart, and restore two health points.
+The extra heart persists through relogging and server restarts, but is reset to the base 20.0
+maximum health on death.
+
 ### HUD and F3 limitation
 
 The server sends `Time:`, `Biome:` and `XYZ:` to the Eagler player through an action bar. The current
@@ -128,6 +137,10 @@ JavaScript source hook for F3 state. Therefore, this project can provide the HUD
 F3 key behaviour, but it cannot reliably hide only the action-bar HUD when F3 is pressed
 or position it beside the FPS counter without an available client source hook. This is the
 remaining client-integration limitation, not a server plugin omission.
+
+The same bundled-client limitation prevents adding an Elytra-only slot to the inventory screen
+or rendering both chestplate armor and Elytra on a player at once. Those changes require editable
+client source and a rebuilt client; a server plugin alone cannot change those client visuals.
 
 ### Build and restart
 
