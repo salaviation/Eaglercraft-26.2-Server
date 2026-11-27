@@ -1,0 +1,5 @@
+authentication:
+  enabled: true
+sanctuary:
+  spawn-enabled: true
+  default-radius: 11

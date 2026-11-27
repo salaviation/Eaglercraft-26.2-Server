@@ -9,7 +9,7 @@ Before starting, make sure you have:
 
 - **Node.js 20 or newer** (with npm)
 - **Java 25 JDK**
-- An strong internet connection for the first setup
+- A strong internet connection for the first setup
 - Around 3 GB of available RAM for the server
 
 Downloads:
@@ -84,3 +84,59 @@ This checks your local setup for common problems.
 The server files are downloaded into the `runtime/` folder during the first setup. They aren't included in the ZIP.
 
 The Eaglercraft client and world files are already included, so you won't need to download those separately.
+
+## Eaglercraft Enhancements
+
+The server includes an additional Paper plugin for authentication, a protected login room,
+spawn sanctuaries, and a live action-bar HUD.
+
+### Administrator commands
+
+- `/auth enable` - enable authentication
+- `/auth disable` - disable authentication without deleting registrations
+- `/auth status` - show authentication state
+- `/auth reset <player>` - require the player to register again
+- `/spawnprotect` - toggle the default 11-block spawn sanctuary
+- `/sanctuary r <radius>` - create an overlapping-safe sanctuary centred on the OP
+- `/removesanctuary` - remove every sanctuary containing the OP, including the default spawn sanctuary
+
+### Player commands
+
+- `/register <password> <confirm-password>` - register for the first time
+- `/login <password>` - authenticate after joining
+- `/changepassword <old-password> <new-password>` - replace an authentication password
+
+Authentication is enabled by default. Passwords are hashed with salted Argon2id parameters
+and account files are stored below `runtime/backend/plugins/EaglerEnhancements/accounts/`.
+The server is in offline/insecure mode, so accounts are bound to the Paper UUID and exact
+player name. Offline mode cannot cryptographically prove that a username is owned by its
+legitimate player; restrict access to trusted players and use a whitelist/firewall if needed.
+
+The login room is protected at and around netherite floor block `(0,199,0)`, with player
+space centred on `(0.5,200,0.5)`. Authenticated players are restored to their saved previous
+location or the normal spawn.
+
+The plugin uses server-side Paper events for PVP, mob spawning/movement, explosions,
+block modification, inventory and interaction restrictions. The default sanctuary is a
+hemisphere with radius 11 centred on the overworld spawn and extending upward.
+
+### HUD and F3 limitation
+
+The server sends `Time:`, `Biome:` and `XYZ:` to the Eagler player through an action bar. The current
+bundled client is a 73 MB generated HTML/WebAssembly client and contains no inspectable
+JavaScript source hook for F3 state. Therefore, this project can provide the HUD and normal
+F3 key behaviour, but it cannot reliably hide only the action-bar HUD when F3 is pressed
+or position it beside the FPS counter without an available client source hook. This is the
+remaining client-integration limitation, not a server plugin omission.
+
+### Build and restart
+
+```sh
+npm run build:plugin
+npm start
+```
+
+`npm start` rebuilds and installs the plugin automatically. Press `Ctrl+C` to stop Paper and
+Velocity; the launcher sends their graceful `stop`/`shutdown` commands first. Codespaces
+controls whether a codespace remains active and does not allow application code to bypass
+GitHub inactivity or lifecycle restrictions.
