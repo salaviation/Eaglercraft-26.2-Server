@@ -1,8 +1,0 @@
-classpath:/workspaces/Eaglercraft-26.2-Server/runtime/backend/libraries/io/papermc/paper/paper-api/26.2.build.135-stable/paper-api-26.2.build.135-stable.jar	2889195:1795443417960
-classpath:/workspaces/Eaglercraft-26.2-Server/runtime/backend/libraries/net/kyori/adventure-api/5.2.0/adventure-api-5.2.0.jar	428448:1795443418370
-classpath:/workspaces/Eaglercraft-26.2-Server/runtime/backend/libraries/net/kyori/adventure-key/5.2.0/adventure-key-5.2.0.jar	11211:1795443418371
-classpath:/workspaces/Eaglercraft-26.2-Server/runtime/backend/libraries/com/google/guava/guava/33.6.0-jre/guava-33.6.0-jre.jar	3064793:1795443417184
-classpath:/workspaces/Eaglercraft-26.2-Server/runtime/backend/libraries/net/md-5/bungeecord-chat/1.21-R0.2-deprecated+build.21/bungeecord-chat-1.21-R0.2-deprecated+build.21.jar	168064:1795443418385
-classpath:/home/codespace/.m2/repository/org/bouncycastle/bcprov-jdk18on/1.78.1/bcprov-jdk18on-1.78.1.jar	8324412:1713426313000
-classpath:/home/codespace/.m2/repository/com/google/code/gson/gson/2.11.0/gson-2.11.0.jar	298435:1716144881000
-classpath:/home/codespace/.m2/repository/com/google/errorprone/error_prone_annotations/2.27.0/error_prone_annotations-2.27.0.jar	19370:1714146969000
