@@ -10,9 +10,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.inventory.PrepareSmithingEvent;
-import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInputEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapelessRecipe;
@@ -40,7 +39,7 @@ public final class ElytraChestplatePlugin extends JavaPlugin implements Listener
     );
 
     private final Map<UUID, Integer> glidingTicks = new ConcurrentHashMap<>();
-    private final Map<UUID, Long> heldRightClickUntil = new ConcurrentHashMap<>();
+    private final Set<UUID> jumpHeld = ConcurrentHashMap.newKeySet();
     private NamespacedKey hybridKey;
     private NamespacedKey recipeKey;
     private BukkitTask flightTask;
@@ -59,6 +58,7 @@ public final class ElytraChestplatePlugin extends JavaPlugin implements Listener
         if (flightTask != null) flightTask.cancel();
         Bukkit.removeRecipe(recipeKey);
         glidingTicks.clear();
+        jumpHeld.clear();
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (isHybrid(player.getInventory().getChestplate()) && player.isGliding()) {
                 player.setGliding(false);
@@ -156,15 +156,10 @@ public final class ElytraChestplatePlugin extends JavaPlugin implements Listener
 
             if (player.isOnGround() || player.isInWater() || player.isSwimming()) {
                 glidingTicks.remove(player.getUniqueId());
-                heldRightClickUntil.remove(player.getUniqueId());
                 if (player.isGliding()) player.setGliding(false);
                 continue;
             }
-            long now = System.currentTimeMillis();
-            Long holdUntil = heldRightClickUntil.get(player.getUniqueId());
-            boolean rightClickHeld = holdUntil != null && now < holdUntil;
-            if (!rightClickHeld) heldRightClickUntil.remove(player.getUniqueId());
-            if (rightClickHeld) {
+            if (jumpHeld.contains(player.getUniqueId())) {
                 glidingTicks.remove(player.getUniqueId());
                 if (player.isGliding()) player.setGliding(false);
                 continue;
@@ -192,26 +187,14 @@ public final class ElytraChestplatePlugin extends JavaPlugin implements Listener
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         glidingTicks.remove(event.getPlayer().getUniqueId());
-        heldRightClickUntil.remove(event.getPlayer().getUniqueId());
+        jumpHeld.remove(event.getPlayer().getUniqueId());
     }
 
     @EventHandler
-    public void onInteract(PlayerInteractEvent event) {
-        if (event.getAction() != Action.RIGHT_CLICK_AIR &&
-            event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+    public void onInput(PlayerInputEvent event) {
         Player player = event.getPlayer();
         if (!isHybrid(player.getInventory().getChestplate())) return;
-        if (player.isOnGround() || player.isInWater() || player.isSwimming()) return;
-        if (usesItemNormally(player.getInventory().getItemInMainHand()) ||
-            usesItemNormally(player.getInventory().getItemInOffHand())) return;
-        heldRightClickUntil.put(player.getUniqueId(), System.currentTimeMillis() + 500L);
-    }
-
-    private boolean usesItemNormally(ItemStack item) {
-        if (item == null) return false;
-        Material type = item.getType();
-        return type == Material.WIND_CHARGE ||
-            type == Material.FIREWORK_ROCKET ||
-            type.isEdible();
+        if (event.getInput().isJump()) jumpHeld.add(player.getUniqueId());
+        else jumpHeld.remove(player.getUniqueId());
     }
 }

@@ -8,7 +8,7 @@ Smithing results keep the hybrid marker and lore.
 While wearing the hybrid chestplate, players automatically start gliding after falling at
 least one block. It retains the chestplate's armor value and loses one durability every 10
 gliding ticks (twice the normal Elytra wear rate). Vanilla Mending and Unbreaking continue to
-work. Holding right-click after jumping makes the wearer fall normally instead of gliding.
+work. Holding Space while airborne makes the wearer fall normally instead of gliding.
 
 Build and install it with `npm run build:elytra-plugin`. It is not rebuilt by `npm start`,
 so removing `runtime/backend/plugins/ElytraChestplate.jar` disables the feature and it stays

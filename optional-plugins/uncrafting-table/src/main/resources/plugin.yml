@@ -1,0 +1,5 @@
+name: UncraftingTable
+main: nuper.eagler.uncraftingtable.UncraftingTablePlugin
+version: 1.0.0
+api-version: '1.21'
+description: Reverses crafting recipes at a renamed Crafting Table
