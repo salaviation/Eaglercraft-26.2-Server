@@ -476,18 +476,38 @@ public final class EaglerEnhancementsPlugin extends JavaPlugin implements Listen
     }
 
     private void completeAuthentication(Player player) {
-        unauthenticated.remove(player.getUniqueId());
         player.setFallDistance(0.0f);
         AccountData data = account(player);
         Location destination = deserialiseLocation(data.previousLocation);
         if (destination == null) destination = player.getServer().getWorlds().getFirst().getSpawnLocation();
         if (!destination.getBlock().isLiquid() && destination.getWorld() != null) {
-            player.teleport(destination);
+            destination = destination.clone();
         } else {
-            player.teleport(destination.getWorld() != null
+            destination = destination.getWorld() != null
                 ? destination.getWorld().getHighestBlockAt(destination).getLocation().add(0.5, 1, 0.5)
-                : player.getServer().getWorlds().getFirst().getSpawnLocation());
+                : player.getServer().getWorlds().getFirst().getSpawnLocation();
         }
+        Location returnLocation = destination;
+        player.showWinScreen();
+        int[] progress = {0};
+        player.sendTitle("", "Remembering where you left off... 0%", 0, 10, 0);
+        BukkitTask[] task = new BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(this, () -> {
+            if (!player.isOnline()) {
+                task[0].cancel();
+                return;
+            }
+            if (progress[0] < 100) {
+                progress[0] = Math.min(progress[0] + 5, 100);
+                player.sendTitle("", "Remembering where you left off... " + progress[0] + "%", 0, 10, 0);
+                return;
+            }
+            task[0].cancel();
+            player.resetTitle();
+            unauthenticated.remove(player.getUniqueId());
+            player.setFallDistance(0.0f);
+            player.teleport(returnLocation);
+        }, 5L, 5L);
     }
 
     private boolean validPassword(String password) {
@@ -660,9 +680,7 @@ public final class EaglerEnhancementsPlugin extends JavaPlugin implements Listen
                 player.setFoodLevel(20);
                 player.setSaturation(20.0f);
                 player.sendActionBar(ChatColor.GOLD + "Sanctuary of Protection");
-                if (sanctuaryInside.add(player.getUniqueId())) {
-                    player.sendTitle(ChatColor.GOLD + "SANCTUARY OF PROTECTION", "", 10, 60, 10);
-                }
+                sanctuaryInside.add(player.getUniqueId());
             } else {
                 if (sanctuaryInside.remove(player.getUniqueId())) {
                     player.sendActionBar("");
