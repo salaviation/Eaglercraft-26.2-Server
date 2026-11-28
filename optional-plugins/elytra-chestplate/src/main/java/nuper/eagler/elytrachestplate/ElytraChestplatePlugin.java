@@ -2,6 +2,7 @@ package nuper.eagler.elytrachestplate;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -64,14 +65,14 @@ public final class ElytraChestplatePlugin extends JavaPlugin implements Listener
     private void registerRecipe() {
         Bukkit.removeRecipe(recipeKey);
         ShapelessRecipe recipe = new ShapelessRecipe(recipeKey, new ItemStack(Material.IRON_CHESTPLATE));
-        recipe.addIngredient(new RecipeChoice.MaterialChoice(CHESTPLATES));
+        recipe.addIngredient(new RecipeChoice.MaterialChoice(List.copyOf(CHESTPLATES)));
         recipe.addIngredient(Material.ELYTRA);
         Bukkit.addRecipe(recipe);
     }
 
     @EventHandler
     public void onPrepareCraft(PrepareItemCraftEvent event) {
-        if (event.getRecipe() == null || !recipeKey.equals(event.getRecipe().getKey())) return;
+        if (!(event.getRecipe() instanceof Keyed keyed) || !recipeKey.equals(keyed.getKey())) return;
 
         ItemStack chestplate = null;
         boolean hasElytra = false;
