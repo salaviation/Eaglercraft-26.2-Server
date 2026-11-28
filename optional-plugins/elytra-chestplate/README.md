@@ -10,5 +10,6 @@ least one block. It retains the chestplate's armor value and loses one durabilit
 gliding ticks (twice the normal Elytra wear rate). Vanilla Mending and Unbreaking continue to
 work.
 
-The plugin is built and installed as `runtime/backend/plugins/ElytraChestplate.jar` by
-`npm run build:plugin`. Removing that JAR disables the plugin for the current server install.
+Build and install it with `npm run build:elytra-plugin`. It is not rebuilt by `npm start`,
+so removing `runtime/backend/plugins/ElytraChestplate.jar` disables the feature and it stays
+disabled across restarts. To re-enable it, run the build command again.

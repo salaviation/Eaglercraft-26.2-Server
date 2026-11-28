@@ -73,7 +73,10 @@ public final class ElytraChestplatePlugin extends JavaPlugin implements Listener
 
     @EventHandler
     public void onPrepareCraft(PrepareItemCraftEvent event) {
-        if (!(event.getRecipe() instanceof Keyed keyed) || !recipeKey.equals(keyed.getKey())) return;
+        if (!(event.getRecipe() instanceof Keyed keyed) || !recipeKey.equals(keyed.getKey())) {
+            preserveHybridInCraftResult(event);
+            return;
+        }
 
         ItemStack chestplate = null;
         boolean hasElytra = false;
@@ -97,6 +100,17 @@ public final class ElytraChestplatePlugin extends JavaPlugin implements Listener
             return;
         }
         event.getInventory().setResult(createHybrid(chestplate));
+    }
+
+    private void preserveHybridInCraftResult(PrepareItemCraftEvent event) {
+        ItemStack result = event.getInventory().getResult();
+        if (result == null || !CHESTPLATES.contains(result.getType())) return;
+        for (ItemStack ingredient : event.getInventory().getMatrix()) {
+            if (isHybrid(ingredient) && ingredient.getType() == result.getType()) {
+                event.getInventory().setResult(markHybrid(result));
+                return;
+            }
+        }
     }
 
     @EventHandler

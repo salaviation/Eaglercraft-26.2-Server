@@ -10,7 +10,7 @@
   "scripts": {
     "postinstall": "node scripts/install.js",
     "setup": "node scripts/install.js",
-    "build:plugin": "mvn -q package && cp target/eagler-enhancements-1.0.0.jar runtime/backend/plugins/EaglerEnhancements.jar && rm -rf target && npm run build:elytra-plugin",
+    "build:plugin": "mvn -q package && cp target/eagler-enhancements-1.0.0.jar runtime/backend/plugins/EaglerEnhancements.jar && rm -rf target",
     "build:elytra-plugin": "mvn -q -f optional-plugins/elytra-chestplate/pom.xml package && cp optional-plugins/elytra-chestplate/build-output/elytra-chestplate-1.0.0.jar runtime/backend/plugins/ElytraChestplate.jar && rm -rf optional-plugins/elytra-chestplate/build-output",
     "prestart": "npm run build:plugin",
     "start": "node scripts/start.js",
