@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
+import org.bukkit.event.inventory.PrepareSmithingEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.RecipeChoice;
@@ -98,12 +99,24 @@ public final class ElytraChestplatePlugin extends JavaPlugin implements Listener
         event.getInventory().setResult(createHybrid(chestplate));
     }
 
+    @EventHandler
+    public void onPrepareSmithing(PrepareSmithingEvent event) {
+        ItemStack base = event.getInventory().getInputEquipment();
+        ItemStack result = event.getInventory().getResult();
+        if (!isHybrid(base) || result == null || !CHESTPLATES.contains(result.getType())) return;
+        event.getInventory().setResult(markHybrid(result));
+    }
+
     private ItemStack createHybrid(ItemStack chestplate) {
-        ItemStack hybrid = chestplate.clone();
+        return markHybrid(chestplate.clone());
+    }
+
+    private ItemStack markHybrid(ItemStack hybrid) {
         ItemMeta meta = hybrid.getItemMeta();
         meta.getPersistentDataContainer().set(hybridKey, PersistentDataType.BYTE, (byte) 1);
         List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
-        lore.add(ChatColor.AQUA + "Elytra");
+        String elytraLore = ChatColor.AQUA + "Elytra";
+        if (!lore.contains(elytraLore)) lore.add(elytraLore);
         meta.setLore(lore);
         hybrid.setItemMeta(meta);
         return hybrid;
@@ -118,8 +131,9 @@ public final class ElytraChestplatePlugin extends JavaPlugin implements Listener
         for (Player player : Bukkit.getOnlinePlayers()) {
             ItemStack chestplate = player.getInventory().getChestplate();
             if (!isHybrid(chestplate)) {
+                boolean wasHybridGliding = glidingTicks.containsKey(player.getUniqueId());
                 glidingTicks.remove(player.getUniqueId());
-                if (player.isGliding()) player.setGliding(false);
+                if (wasHybridGliding && player.isGliding()) player.setGliding(false);
                 continue;
             }
 
@@ -128,7 +142,8 @@ public final class ElytraChestplatePlugin extends JavaPlugin implements Listener
                 if (player.isGliding()) player.setGliding(false);
                 continue;
             }
-            if (!player.isGliding() && player.getVelocity().getY() < -0.02) {
+            if (!player.isGliding() && player.getFallDistance() >= 1.0f &&
+                player.getVelocity().getY() < -0.02) {
                 player.setGliding(true);
             }
             if (!player.isGliding()) {
