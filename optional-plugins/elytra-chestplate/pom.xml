@@ -48,4 +48,7 @@
       <systemPath>${project.basedir}/../../runtime/backend/libraries/net/md-5/bungeecord-chat/1.21-R0.2-deprecated+build.21/bungeecord-chat-1.21-R0.2-deprecated+build.21.jar</systemPath>
     </dependency>
   </dependencies>
+  <build>
+    <directory>${project.basedir}/build-output</directory>
+  </build>
 </project>
