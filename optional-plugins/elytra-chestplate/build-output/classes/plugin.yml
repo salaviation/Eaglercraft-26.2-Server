@@ -1,0 +1,5 @@
+name: ElytraChestplate
+main: nuper.eagler.elytrachestplate.ElytraChestplatePlugin
+version: 1.0.0
+api-version: '1.21'
+description: Optional chestplate and Elytra hybrid equipment
