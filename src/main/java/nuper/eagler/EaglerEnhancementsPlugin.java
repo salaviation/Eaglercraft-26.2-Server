@@ -488,7 +488,6 @@ public final class EaglerEnhancementsPlugin extends JavaPlugin implements Listen
                 : player.getServer().getWorlds().getFirst().getSpawnLocation();
         }
         Location returnLocation = destination;
-        player.showWinScreen();
         int[] progress = {0};
         player.sendTitle("", "Remembering where you left off... 0%", 0, 10, 0);
         BukkitTask[] task = new BukkitTask[1];

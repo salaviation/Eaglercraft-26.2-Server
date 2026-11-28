@@ -202,6 +202,16 @@ public final class ElytraChestplatePlugin extends JavaPlugin implements Listener
         Player player = event.getPlayer();
         if (!isHybrid(player.getInventory().getChestplate())) return;
         if (player.isOnGround() || player.isInWater() || player.isSwimming()) return;
+        if (usesItemNormally(player.getInventory().getItemInMainHand()) ||
+            usesItemNormally(player.getInventory().getItemInOffHand())) return;
         heldRightClickUntil.put(player.getUniqueId(), System.currentTimeMillis() + 500L);
+    }
+
+    private boolean usesItemNormally(ItemStack item) {
+        if (item == null) return false;
+        Material type = item.getType();
+        return type == Material.WIND_CHARGE ||
+            type == Material.FIREWORK_ROCKET ||
+            type.isEdible();
     }
 }
